@@ -1,0 +1,6 @@
+/backend/node_modules/
+/.env
+/build/
+/frontend/node_modules/
+package-lock.json
+package.json
