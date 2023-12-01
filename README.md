@@ -1,6 +1,9 @@
 # Proyecto-Cine
 Proyecto para TFG de ASIR
 
+TODO: Crear mocks de cada página ✅ Lo básico
+Configurar la base de datos en mysql
+AUTOINCREMNT PREDECIBLE problema de seguridad para creaccion de usuarios UUID en su lugar
 
 Diagrama de casos: 
 Tipos de Usuarios:
