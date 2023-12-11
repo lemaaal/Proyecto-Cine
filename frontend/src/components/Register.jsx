@@ -29,7 +29,7 @@ function Register() {
   const registerUser = async (userData) => {
     try {
       const response = await axios.post(
-        "http://localhost:3001/register",
+        "/register",
         userData
       );
       console.log(response.data);

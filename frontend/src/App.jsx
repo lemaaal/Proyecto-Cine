@@ -1,29 +1,41 @@
-import React from "react";
-import "./index.css"
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import React, { useEffect } from "react";
+import "./index.css";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
-
-// Rutas
-import Login from "./components/Login";
-import Register from "./components/Register";
-import Home from "./components/Home";
-import Movies from "./components/Movies";
-import Reviews from "./components/ReviewsList";
-import Disscusions from "./components/Disscusions";
-import Profile from "./components/Profile";
-import ReviewsPost from "./components/ReviewsPost"
+import { publicRoutes, protectedRoutes } from "./routes";
+import Layout from "./components/Layout";
 
 function ProtectedRoutes() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, checkAuth } = useAuth();
 
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  return isAuthenticated ? (
+    <Layout>
+      <Routes>
+        {protectedRoutes.map((route, index) => (
+          <Route key={index} path={route.path} element={<route.component />} />
+        ))}
+      </Routes>
+    </Layout>
+  ) : (
+    <Navigate to="/login" />
+  );
+}
+
+function PublicRoutes() {
   return (
     <Routes>
-      <Route path="/" element={isAuthenticated ? <Home /> : <Navigate to="/login" />} />
-      <Route path="/movies" element={isAuthenticated ? <Movies /> : <Navigate to="/login" />} />
-      <Route path="/reviews" element={isAuthenticated ? <Reviews /> : <Navigate to="/login" />} />
-      <Route path="/disscusions" element={isAuthenticated ? <Disscusions /> : <Navigate to="/login" />} />
-      <Route path="/profile" element={isAuthenticated ? <Profile /> : <Navigate to="/login" />} />
-      <Route path="/review/:movieId" element={isAuthenticated ? <ReviewsPost /> : <Navigate to="/login" />} />
+      {publicRoutes.map((route, index) => (
+        <Route key={index} path={route.path} element={<route.component />} />
+      ))}
     </Routes>
   );
 }
@@ -32,13 +44,8 @@ function App() {
   return (
     <AuthProvider>
       <Router>
-      <div className="min-h-screen bg-neutral-900 text-white">
-      <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-        </Routes>
+        <PublicRoutes />
         <ProtectedRoutes />
-      </div>
       </Router>
     </AuthProvider>
   );

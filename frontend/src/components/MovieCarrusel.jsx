@@ -24,12 +24,12 @@ const MovieCarousel = () => {
 
   // Funciones para manejar los clics en los botones
   const handleReviewClick = (movieId) => {
-    navigate(`/review/${movieId}`);
+    navigate(`/reviews/${movieId}`);
     console.log("Review for movie", movieId);
   };
 
   const handleDiscussionClick = (movieId) => {
-    navigate(`/disscusions/${movieId}`);
+    navigate(`/discussions/${movieId}`);
     console.log("Discussion for movie", movieId);
   };
 
@@ -39,7 +39,7 @@ const MovieCarousel = () => {
     speed: 500,
     slidesToShow: 3,
     slidesToScroll: 1,
-    centerMode: true,
+    // centerMode: true, para que parezca que hay mas peliculas
     autoplay: true,
     autoplaySpeed: 3000,
     responsive: [
@@ -55,19 +55,26 @@ const MovieCarousel = () => {
     ],
   };
 
+  // Función para navegar a la página de detalles de la película con su ID
+  const handleMovieClick = (movieId) => {
+    navigate(`/movies/${movieId}`);
+  };
+
   return (
-    <div className="mx-auto pt-2" style={{ maxWidth: "1024px" }}>
+    <div className="mx-auto pt-2 max-w-[1024px]">
       <Slider {...settings}>
         {movies.map(
           (movie) =>
             movie.poster_path && (
+              
               <div key={movie.id} className="px-2 group">
-                <div className="bg-[#93B1A6] relative">
-                  <div className="overflow-hidden group-hover:mb-16 transition-all duration-300">
+                <div className="bg-white rounded-lg overflow-hidden shadow-lg relative">
+                  <div className="overflow-hidden group-hover:mb-16 cursor-pointer">
                     <img
                       src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
                       alt={movie.title}
                       className="mx-auto transition-all duration-300 transform group-hover:scale-90"
+                      onClick={() => handleMovieClick(movie.id)}
                     />
                   </div>
                   <div className="hidden group-hover:flex flex-col items-center justify-center absolute inset-x-0 bottom-0 mb-4 transition-all duration-300">
@@ -85,7 +92,7 @@ const MovieCarousel = () => {
                     </button>
                   </div>
                   <div className="text-center p-4 bg-opacity-0 group-hover:bg-opacity-100 transition-all duration-300">
-                    <h3 className="text-white text-xl group-hover:hidden transition-all duration-300">{movie.title}</h3>
+                    <h3 className="text-gray-900 text-xl group-hover:hidden transition-all duration-300">{movie.title}</h3>
                   </div>
                 </div>
               </div>

@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import Navbar from "./Navbar";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSearch, faTimes } from "@fortawesome/free-solid-svg-icons";
+import { useNavigate } from "react-router-dom";
 
 const MoviesGrid = () => {
   const [movies, setMovies] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const navigate = useNavigate();
 
   const fetchMovies = async (search = "") => {
     try {
@@ -35,9 +36,13 @@ const MoviesGrid = () => {
     fetchMovies();
   };
 
+  // Función para navegar a la página de detalles de la película con su ID
+  const handleMovieClick = (movieId) => {
+    navigate(`/movies/${movieId}`);
+  };
+
   return (
     <div>
-      <Navbar />
       <form onSubmit={handleSearch} className="flex justify-center pt-6 gap-2">
         <input
           type="text"
@@ -61,24 +66,28 @@ const MoviesGrid = () => {
           </button>
         )}
       </form>
-      <div className="grid grid-cols-4 gap-4 mt-4 bg-gray-900 p-4 rounded">
+      <div className="grid grid-cols-4 gap-4 mt-4 bg-[#5C8374] p-4 rounded">
         {movies
           .filter((movie) => movie.poster_path)
           .map((movie) => (
             <div
               key={movie.id}
-              className="max-w-sm rounded overflow-hidden shadow-lg bg-gray-800 hover:shadow-2xl transition duration-300"
-          >
+              className="flex flex-col bg-[#8ac7af] rounded overflow-hidden shadow-lg transition duration-300 cursor-pointer"
+              style={{ minHeight: '540px' }}
+              onClick={() => handleMovieClick(movie.id)}
+            >
               <img
-                className="w-full object-cover h-96"
+                className="w-full h-96 object-cover" 
                 src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
                 alt={movie.title}
               />
-              <div className="px-6 py-4">
+              <div className="p-4 flex flex-col justify-normal flex-grow">
                 <div className="font-bold text-xl mb-2 text-white">
                   {movie.title}
                 </div>
-                <p className="text-gray-300 text-base">{movie.overview}</p>
+                <p className="text-gray-700 text-base overflow-hidden text-ellipsis">
+                  {movie.overview.length > 100 ? movie.overview.substring(0, 100) + '...' : movie.overview}
+                </p>
               </div>
             </div>
           ))}

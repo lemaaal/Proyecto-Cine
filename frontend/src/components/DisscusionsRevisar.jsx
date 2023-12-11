@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
-const CreateDebate = () => {
+const CreateDiscussion = () => {
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
   const navigate = useNavigate();
@@ -11,7 +11,7 @@ const CreateDebate = () => {
     event.preventDefault();
     setMessage(''); // Limpiar mensajes anteriores
     try {
-      const response = await axios.post('/debates', { title }, {
+      const response = await axios.post('/discussions', { title }, {
         headers: {
           // Asegúrate de incluir el token de autenticación si es necesario
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -21,7 +21,7 @@ const CreateDebate = () => {
       console.log(response.data);
       setMessage('Debate creado con éxito.');
       // Redirigir al usuario a la página del debate, usar response.data.id si está disponible
-      navigate(`/debates/${response.data.id}`);
+      navigate(`/discussions/${response.data.id}`);
     } catch (error) {
       console.error('Error al crear el debate:', error);
       setMessage('Error al crear el debate.');
@@ -52,4 +52,4 @@ const CreateDebate = () => {
   );
 };
 
-export default CreateDebate;
+export default CreateDiscussion;

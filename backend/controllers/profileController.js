@@ -1,4 +1,4 @@
-const { pool } = require('../dbConfig');
+const db = require("../config/db");
 
 const getUserProfile = async (req, res) => {
     // Lógica para obtener el perfil de un usuario

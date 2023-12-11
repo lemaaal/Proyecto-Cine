@@ -2,18 +2,16 @@ import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
 import ReviewForm from "./ReviewForm";
-import Navbar from "./Navbar";
 
-const ReviewPage = () => {
+const ReviewPost = () => {
   const { movieId } = useParams();
   const [movie, setMovie] = useState(null);
 
   useEffect(() => {
     const fetchMovie = async () => {
       try {
-        // Asegúrate de reemplazar 'localhost:3001' con la URL de tu backend si es diferente.
         const response = await axios.get(
-          `http://localhost:3001/movies/${movieId}`
+          `/movies/${movieId}`
         );
         setMovie(response.data);
       } catch (error) {
@@ -28,11 +26,9 @@ const ReviewPage = () => {
     return <div>No se ha encontrado la película</div>;
   }
 
-  // Asegúrate de que los campos de 'poster_path' y 'overview' coincidan con cómo los envía tu API.
   return (
     <div>
-      <Navbar />
-      <div className="bg-gray-900 text-white min-h-screen flex flex-col items-center pt-8">
+      <div className="text-white min-h-screen flex flex-col items-center pt-8">
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row items-center md:items-start md:space-x-6">
             <img
@@ -54,4 +50,4 @@ const ReviewPage = () => {
   );
 };
 
-export default ReviewPage;
+export default ReviewPost;

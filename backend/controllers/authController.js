@@ -8,7 +8,7 @@ const login = async (req, res) => {
 
     // Verificar si el usuario existe
     db.query(
-      "SELECT * FROM users WHERE email = ?",
+      "SELECT BIN_TO_UUID(id) AS stringId, name, email, password FROM users WHERE email = ?",
       [email],
       async (error, results, fields) => {
         if (error) {
@@ -25,8 +25,8 @@ const login = async (req, res) => {
         if (!isMatch) {
           return res.status(401).send("Autenticación fallida");
         }
-
-        const token = jwt.sign({ userId: user.id }, "tuSecreto", {
+        // const token = jwt.sign({ userId: user.stringId }, "tuSecreto", {
+        const token = jwt.sign({ id: user.stringId }, "tuSecreto", {
           expiresIn: "1h",
         });
         res.json({ token });

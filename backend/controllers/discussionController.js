@@ -1,6 +1,6 @@
-const db = require('./db');
+const db = require("../config/db");
 
-const getAllDisscusions = (req, res) => {
+const getAllDiscussions = (req, res) => {
   db.query('SELECT * FROM discussion', (err, results) => {
     if (err) {
       return res.status(500).send('Error al recuperar las discusiones');
@@ -9,7 +9,7 @@ const getAllDisscusions = (req, res) => {
   });
 };
 
-const getDebateById = (req, res) => {
+const getDiscussionsById = (req, res) => {
   const { id } = req.params;
   db.query('SELECT * FROM discussion WHERE id = ?', [id], (err, results) => {
     if (err) {
@@ -23,7 +23,7 @@ const getDebateById = (req, res) => {
   });
 };
 
-const createDebate = (req, res) => {
+const createDiscussions  = (req, res) => {
   const { title, description, userId } = req.body;
   const createDate = new Date();
   db.query('INSERT INTO discussion (title, description, user_id, create_date) VALUES (?, ?, ?, ?)', [title, description, userId, createDate], (err, results) => {
@@ -34,7 +34,7 @@ const createDebate = (req, res) => {
   });
 };
 
-const addPostToDebate = (req, res) => {
+const addPostToDiscussions  = (req, res) => {
   const { id } = req.params;
   const { userId, text } = req.body;
   const timestamp = new Date();
@@ -47,8 +47,8 @@ const addPostToDebate = (req, res) => {
 };
 
 module.exports = {
-  getAllDisscusions,
-  getDebateById,
-  createDebate,
-  addPostToDebate
+  getAllDiscussions,
+  getDiscussionsById,
+  createDiscussions ,
+  addPostToDiscussions 
 };

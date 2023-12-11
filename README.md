@@ -1,55 +1,25 @@
 # Proyecto-Cine
 Proyecto para TFG de ASIR
 
-TODO: Crear mocks de cada página ✅ Lo básico
-Configurar la base de datos en mysql
-AUTOINCREMNT PREDECIBLE problema de seguridad para creaccion de usuarios UUID en su lugar
 
-Diagrama de casos: 
-Tipos de Usuarios:
+TODO: Cambiar alerts por otra cosas mas smoth(menudo friki poniendo esto)
+TODO: en movies al clickar una pelicula que te lleve a mas informacion de la pelicula ✅
+TODO: Reseñas clickables que te aplien la informacion basica de la reseña 🎯
+TODO: Enviar el token todo el rato para que esten autenticado ✅
+TODO: Obtener el nombre del usuario mediante el user_id y hacer clicklables las reseñas, debates 
+TODO: Mejorar reviews, más completas. 
+TODO: Mejorar perfil, añadir funciones de amigos, chat, foto de perfil, listas de peliculas, pelicula favorita.
+TODO: Hacer toda lo logica de los debates (pereza)
+TODO: Poner varios idiomas
+TODO: trailer en info de pelicula
+TODO: Mejorar nabvar con transparencia en scroll
 
-Usuario Registrado: Un usuario que ha creado una cuenta y ha iniciado sesión.
-Usuario Invitado: Alguien que utiliza la aplicación sin haber iniciado sesión.
-Administrador: Usuario con permisos para gestionar la aplicación y moderar contenido.
-Pantallas Principales y Casos de Uso:
-
-Pantalla de Inicio:
-
-Usuario Invitado:
-Registrarse.
-Iniciar sesión.
-Usuario Registrado/Administrador:
-Acceder a su perfil.
-Buscar películas/series.
-Ver recomendaciones.
-Acceder a listas personalizadas.
-Participar en discusiones.
-Leer y escribir reseñas.
-Configuración de cuenta.
-Pantalla de Perfil:
-
-Usuario Registrado/Administrador:
-Editar perfil (foto, biografía, preferencias).
-Ver su historial de actividad (reseñas, discusiones, listas).
-Gestionar listas de películas/series.
-Ver y editar configuraciones de privacidad y seguridad.
-Pantalla de Películas/Series:
-
-Todos los Usuarios:
-Ver información detallada.
-Leer reseñas públicas.
-Usuario Registrado/Administrador:
-Escribir y publicar reseñas.
-Añadir a listas personalizadas.
-Calificar películas/series.
-Pantalla de Comunidad:
-
-Usuario Registrado/Administrador:
-Participar en discusiones y debates.
-Seguir a otros usuarios.
-Enviar y recibir mensajes privados.
-Pantalla de Administración (solo Administrador):
-
-Gestionar usuarios (suspender, eliminar).
-Moderar contenido (reseñas, comentarios, debates).
-Revisar y responder a consultas de soporte.
+# TODO LIST importante
+- Indicar toda la configuración del sistema y de la aplicacion. 
+- Documentar proceso de instalacion y configuracion.
+- Mostrar configuracion de ips y mascara?
+- Ejemplos de datos en las tablas de la base de datos.
+- Explicación de como implementar la IA y los algoritmos de recomendación.
+- Concretar software, ficheros de configuración y direcciones concretas.
+## Revisar correo si tienes dudas
+Todo lo que no pueda desarollar a tiempo documentar como seria su desarollo con una explicación, imagenes de ejemplo y ...

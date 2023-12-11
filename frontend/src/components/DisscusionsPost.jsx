@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
-const CreateDebatePost = ({ debateId }) => {
+const CreateDiscussionPost = ({ disscusionId }) => {
   const [content, setContent] = useState('');
   const [message, setMessage] = useState('');
   const navigate = useNavigate();
@@ -11,17 +11,16 @@ const CreateDebatePost = ({ debateId }) => {
     event.preventDefault();
     setMessage(''); // Limpiar mensajes anteriores
     try {
-      const response = await axios.post(`/debates/${debateId}/posts`, { content }, {
+      const response = await axios.post(`/discussions/${discussionId}/posts`, { content }, {
         headers: {
           // Incluir el token de autenticación si es necesario
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
       // Manejo de la respuesta
-      console.log(response.data);
       setMessage('Post publicado con éxito.');
       // Opcionalmente, redirigir o actualizar la vista
-      // navigate(`/debates/${debateId}`);
+      // navigate(`/discussions/${discussionId}`);
     } catch (error) {
       console.error('Error al crear el post en el debate:', error);
       setMessage('Error al publicar el post.');
@@ -51,4 +50,4 @@ const CreateDebatePost = ({ debateId }) => {
   );
 };
 
-export default CreateDebatePost;
+export default CreateDisscusionPost;

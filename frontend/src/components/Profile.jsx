@@ -1,29 +1,45 @@
-import React from "react";
-import Navbar from "./Navbar";
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+// import UserReviews from './UserReviews';
+// import FavoriteMoviesList from './FavoriteMoviesList';
+// import WatchList from './WatchList';
+// import ProfilePicture from './ProfilePicture';
+// import FollowersList from './FollowersList';
+// import FollowingList from './FollowingList';
+// import Biography from './Biography';
 
-function Profile() {
+const UserProfile = () => {
+  const [userData, setUserData] = useState(null);
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const response = await axios.get('/profile'); 
+        setUserData(response.data);
+      } catch (error) {
+        console.error('Error al cargar datos del perfil:', error);
+      }
+    };
+
+    fetchUserData();
+  }, []);
+
+  if (!userData) {
+    return <div>Cargando perfil...</div>;
+  }
+
   return (
-    <div className="container mx-auto px-4">
-      <Navbar />
-      <header className="profile-header my-4">
-        {/* Cabecera del Perfil aquí */}
-      </header>
-      <div className="profile-content my-4">
-        <section className="personal-lists bg-gray-200 h-64">
-          {/* Listas Personalizadas aquí */}
-        </section>
-        <section className="user-reviews bg-gray-300 h-64 my-4">
-          {/* Reseñas Publicadas aquí */}
-        </section>
-        <section className="profile-settings bg-gray-200 h-64 my-4">
-          {/* Configuración del Perfil aquí */}
-        </section>
-      </div>
-      <footer className="footer bg-gray-800 text-white p-4 mt-4">
-        {/* Footer igual que en la página principal */}
-      </footer>
+    <div className="user-profile">
+      {/* <ProfilePicture imageUrl={userData.profilePicture} /> */}
+      <h1>{userData.name}</h1>
+      {/* <Biography text={userData.biography} />
+      <UserReviews reviews={userData.reviews} />
+      <FavoriteMoviesList movies={userData.favoriteMovies} />
+      <WatchList movies={userData.watchList} />
+      <FollowersList followers={userData.followers} />
+      <FollowingList following={userData.following} /> */}
     </div>
   );
-}
+};
 
-export default Profile;
+export default UserProfile;

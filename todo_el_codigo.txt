@@ -1,0 +1,1433 @@
+import React, { createContext, useContext, useState } from "react";
+import axios from "axios";
+import { jwtDecode } from "jwt-decode";
+
+const AuthContext = createContext(null);
+
+export function AuthProvider({ children }) {
+  const [auth, setAuth] = useState(null);
+
+  // Iniciar sesión
+  const login = async (email, password) => {
+    try {
+      const response = await axios.post("http://localhost:3001/login", {
+        email,
+        password,
+      });
+      const data = response.data;
+
+      if (data.token) {
+        setAuth(data);
+        localStorage.setItem("auth", JSON.stringify(data));
+
+        // Configurar un temporizador para coincidir con la expiración del token
+        const decodedToken = jwtDecode(data.token);
+        const expirationTime = decodedToken.exp * 1000 - Date.now();
+        setTimeout(() => {
+          logout();
+        }, expirationTime);
+        return true;
+      }
+    } catch (error) {
+      console.error("Error al iniciar sesión", error);
+      alert("Error al iniciar sesión");
+    }
+  };
+
+  // Esta autenticado
+  const isAuthenticated = () => {
+    if (!auth || !auth.token) {
+      return false;
+    }
+
+    try {
+      const decoded = jwtDecode(auth.token);
+      const isTokenExpired = decoded.exp && Date.now() >= decoded.exp * 1000;
+      return !isTokenExpired;
+    } catch (error) {
+      console.error("Error al decodificar el token", error);
+      return false;
+    }
+  };
+
+  // Cerrar sesión
+  const logout = () => {
+    setAuth(null);
+    localStorage.removeItem("auth");
+  };
+
+  // Revisar si hay una sesión guardada
+  const checkAuth = () => {
+    const storedAuth = localStorage.getItem("auth");
+    if (storedAuth) {
+      const parsedAuth = JSON.parse(storedAuth);
+      if (parsedAuth && parsedAuth.token) {
+        try {
+          const decoded = jwtDecode(parsedAuth.token);
+          const isTokenExpired =
+            decoded.exp && Date.now() >= decoded.exp * 1000;
+          if (!isTokenExpired) {
+            setAuth(parsedAuth);
+          } else {
+            // Si el token ha expirado, eliminarlo de localStorage y actualizar el estado
+            localStorage.removeItem("auth");
+            setAuth(null);
+          }
+        } catch (error) {
+          console.error("Error al decodificar el token", error);
+          localStorage.removeItem("auth");
+          setAuth(null);
+        }
+      }
+    }
+  };
+
+  const getUserId = () => {
+    if (auth && auth.token) {
+      try {
+        const decodedToken = jwtDecode(auth.token);
+        return decodedToken.id; 
+      } catch (error) {
+        console.error("Error al decodificar el token", error);
+      }
+    }
+    return null;
+  };
+
+  return (
+    <AuthContext.Provider
+      value={{ auth, isAuthenticated, login, logout, checkAuth, getUserId }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuth() {
+  return useContext(AuthContext);
+}
+import React from 'react';
+import Navbar from './Navbar';
+
+const Layout = ({ children }) => {
+  return (
+    <div className="flex flex-col min-h-screen bg-[#5C8374]">
+      <Navbar />
+      <div className="flex-grow content">
+        {children}
+      </div>
+    </div>
+  );
+};
+
+export default Layout;
+import React from "react";
+
+function Profile() {
+  return (
+    <div className="mx-auto">
+      <header className="profile-header my-4">
+        {/* Cabecera del Perfil aquí */}
+      </header>
+      <div className="profile-content my-4">
+        <section className="personal-lists bg-gray-200 h-64">
+          {/* Listas Personalizadas aquí */}
+        </section>
+        <section className="user-reviews bg-gray-300 h-64 my-4">
+          {/* Reseñas Publicadas aquí */}
+        </section>
+        <section className="profile-settings bg-gray-200 h-64 my-4">
+          {/* Configuración del Perfil aquí */}
+        </section>
+      </div>
+      <footer className="footer bg-gray-800 text-white p-4 mt-4">
+        {/* Footer igual que en la página principal */}
+      </footer>
+    </div>
+  );
+}
+
+export default Profile;
+import React, { useState } from 'react';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+
+const CreateDiscussion = () => {
+  const [title, setTitle] = useState('');
+  const [message, setMessage] = useState('');
+  const navigate = useNavigate();
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setMessage(''); // Limpiar mensajes anteriores
+    try {
+      const response = await axios.post('/discussions', { title }, {
+        headers: {
+          // Asegúrate de incluir el token de autenticación si es necesario
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      // Redireccionar al usuario al debate creado o mostrar mensaje de éxito
+      console.log(response.data);
+      setMessage('Debate creado con éxito.');
+      // Redirigir al usuario a la página del debate, usar response.data.id si está disponible
+      navigate(`/discussions/${response.data.id}`);
+    } catch (error) {
+      console.error('Error al crear el debate:', error);
+      setMessage('Error al crear el debate.');
+    }
+  };
+
+  return (
+    <div className="container mx-auto p-4">
+      <h2 className="text-2xl font-bold mb-4">Crear un nuevo debate</h2>
+      {message && <div className="mb-4 text-center">{message}</div>}
+      <form onSubmit={handleSubmit}>
+        <input
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Título del debate"
+          className="border p-2 rounded w-full mb-4"
+          required
+        />
+        <button
+          type="submit"
+          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+        >
+          Crear Debate
+        </button>
+      </form>
+    </div>
+  );
+};
+
+export default CreateDiscussion;
+import React from 'react';
+import { Navigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+
+const PrivateRoute = ({ children }) => {
+  const { isAuthenticated } = useAuth();
+
+  return isAuthenticated ? children : <Navigate to="/login" replace />;
+};
+
+export default PrivateRoute;
+import React, { useState } from "react";
+import axios from "axios";
+import { useAuth } from "../contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
+
+const ReviewForm = ({ movieId }) => {
+  const [reviewText, setReviewText] = useState("");
+  const { getUserId } = useAuth();
+  const userId = getUserId();
+  const navigate = useNavigate();
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    try {
+      const response = await axios.post(`/reviews/${movieId}`, {
+        movie_id: movieId,
+        user_id: userId, 
+        text: reviewText, 
+      });
+      // TODO: Aquí podrías redirigir al usuario o mostrar un mensaje de éxito
+      console.log(response)
+      navigate('/reviews')
+    } catch (error) {
+      console.error("Error al enviar la reseña:", error);
+      // Aquí podrías manejar el error, tal vez mostrar un mensaje al usuario
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="mt-4">
+      <textarea
+        className="w-full p-4 text-gray-700 leading-tight focus:outline-none focus:shadow-outline rounded border-0 bg-gray-200 mb-4"
+        rows="5"
+        value={reviewText}
+        onChange={(e) => setReviewText(e.target.value)}
+        placeholder="Escribe tu reseña aquí..."
+        required
+      />
+      <button
+        type="submit"
+        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+      >
+        Crear reseña
+      </button>
+    </form>
+  );
+};
+
+export default ReviewForm;
+import React, { useState } from 'react';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+
+const CreateDisscusionPost = ({ disscusionId }) => {
+  const [content, setContent] = useState('');
+  const [message, setMessage] = useState('');
+  const navigate = useNavigate();
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setMessage(''); // Limpiar mensajes anteriores
+    try {
+      const response = await axios.post(`/discussions/${discussionId}/posts`, { content }, {
+        headers: {
+          // Incluir el token de autenticación si es necesario
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      // Manejo de la respuesta
+      setMessage('Post publicado con éxito.');
+      // Opcionalmente, redirigir o actualizar la vista
+      // navigate(`/discussions/${discussionId}`);
+    } catch (error) {
+      console.error('Error al crear el post en el debate:', error);
+      setMessage('Error al publicar el post.');
+    }
+  };
+
+  return (
+    <div className="container mx-auto p-4">
+      <h2 className="text-2xl font-bold mb-4">Escribe tu opinión</h2>
+      {message && <div className="mb-4 text-center">{message}</div>}
+      <form onSubmit={handleSubmit}>
+        <textarea
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          placeholder="Tu mensaje"
+          className="border p-2 rounded w-full mb-4"
+          required
+        />
+        <button
+          type="submit"
+          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+        >
+          Publicar
+        </button>
+      </form>
+    </div>
+  );
+};
+
+export default CreateDisscusionPost;
+import React from "react";
+import { Link } from "react-router-dom";
+
+const NotFound = () => {
+  return (
+    <div className="flex flex-col items-center justify-center h-full mt-[64px]">
+      <div className="text-center">
+        <h1 className="text-4xl font-bold text-white mb-4">
+          Página no encontrada
+        </h1>
+        <p className="text-lg text-white mb-6">
+          Lo sentimos, la página que buscas no existe.
+        </p>
+        <Link
+          to="/"
+          className="px-6 py-3 bg-white text-[#5C8374] rounded-md shadow hover:bg-gray-200 transition-colors"
+        >
+          Volver al inicio
+        </Link>
+      </div>
+    </div>
+  );
+};
+
+export default NotFound;
+import React from 'react';
+
+function ListOfSeries({ series }) {
+  return (
+    <ul className='series'>
+      {
+        series.map(serie => (
+          <li className='serie' key={serie.id}>
+            <h3>{serie.title}</h3>
+            <p>{serie.year}</p>
+            <img src={`https://image.tmdb.org/t/p/original/${serie.image}`} alt={serie.title} />
+          </li>
+        ))
+      }
+    </ul>
+  )
+}
+
+function NoSeriesResults() {
+  return (
+    <p>No se encontraron series para esta búsqueda</p>
+  )
+}
+
+export function Series({ series }) {
+  const hasSeries = series?.length > 0;
+
+  return (
+    hasSeries
+      ? <ListOfSeries series={series} />
+      : <NoSeriesResults />
+  )
+}import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+
+function DiscussionsPage() {
+  const [discussions, setDiscussions] = useState([]);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchDiscussions= async () => {
+      try {
+        const response = await axios.get('/discussions');
+        setDiscussions(response.data);
+      } catch (error) {
+        console.error('Error al obtener los debates:', error);
+      }
+    };
+
+    fetchDiscussions();
+  }, []);
+
+  const handleCreateDiscussion = () => {
+    navigate('/'); // Asegúrate de que esta ruta lleve al formulario para crear debates
+  };
+
+  const DiscussionsList = ({ discussions }) => {
+    if (discussions.length === 0) {
+      return (
+        <div className="container mx-auto p-4 text-center">
+          <h2 className="text-2xl font-bold mb-4">No hay debates disponibles</h2>
+          <button 
+            onClick={handleCreateDiscussion}
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+          >
+            Crear un nuevo debate
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="container mx-auto p-4">
+        <h2 className="text-2xl font-bold mb-4">Debates</h2>
+        <ul>
+          {discussions.map((discussions) => (
+            <li key={discussions.id} className="p-2 hover:bg-gray-100">
+              <a href={`/discussions/${discussions.id}`} className="text-blue-600 hover:underline">
+                {discussions.title}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  };
+
+  return (
+    <div>
+      <DiscussionsList discussions={discussions} />
+    </div>
+  );
+}
+
+export default DiscussionsPage;
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import logo from "../img/logo.png";
+
+function Login() {
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+    showPassword: false,
+  });
+
+  const navigate = useNavigate();
+  const { login } = useAuth();
+
+  // Función para manejar los cambios en los inputs
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+  };
+
+  // Función para alternar la visibilidad de la contraseña
+  const toggleShowPassword = () => {
+    setFormData({ ...formData, showPassword: !formData.showPassword });
+  };
+
+  // Función para manejar el envío del formulario
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await login(formData.email, formData.password);
+      navigate("/");
+    } catch (error) {
+      console.error("Error al iniciar sesión", error);
+      // Manejo de errores de inicio de sesión
+    }
+  };
+
+  return (
+    <div className="flex flex-col justify-center items-center h-screen bg-gray-700">
+      <img src={logo} alt="Logo" className="h-24 mb-6" />
+      <div className="bg-white rounded-lg shadow-xl px-10 pt-8 pb-10 mb-4 w-96">
+        <h2 className="text-gray-800 text-2xl font-semibold mb-6 text-center">
+          Iniciar sesión
+        </h2>
+        <form onSubmit={handleSubmit} className="flex flex-col">
+          <div className="mb-5">
+            <input
+              className="shadow-sm appearance-none border rounded-md w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              placeholder="Correo Electrónico"
+              required
+            />
+          </div>
+          <div className="mb-5">
+            <input
+              className="shadow-sm appearance-none border rounded-md w-full py-3 px-4 text-gray-700 mb-3 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
+              type={formData.showPassword ? "text" : "password"}
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              placeholder="Contraseña"
+              required
+            />
+          </div>
+          <div className="mb-6">
+            <label className="flex items-center">
+              <input
+                className="mr-2"
+                type="checkbox"
+                checked={formData.showPassword}
+                onChange={toggleShowPassword}
+              />
+              <span className="text-sm text-gray-700">Mostrar contraseña</span>
+            </label>
+          </div>
+          <button
+            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+            type="submit"
+          >
+            Iniciar sesión
+          </button>
+          <div className="flex justify-between mt-6 text-sm">
+            <a href="/forgot-password" className="text-blue-600 hover:underline">¿Has olvidado la contraseña?</a>
+            <a href="/register" className="text-blue-600 hover:underline">Registrarse</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+  
+}
+
+export default Login;
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faSearch, faTimes } from "@fortawesome/free-solid-svg-icons";
+import { useNavigate } from "react-router-dom";
+
+const MoviesGrid = () => {
+  const [movies, setMovies] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const navigate = useNavigate();
+
+  const fetchMovies = async (search = "") => {
+    try {
+      const endpoint = search
+        ? `/movies/search?query=${encodeURIComponent(search)}`
+        : "/movies";
+      const response = await axios.get(endpoint);
+      setMovies(response.data);
+    } catch (error) {
+      console.error("Error fetching movies:", error);
+    }
+  };
+
+  // Carga inicial de todas las películas
+  useEffect(() => {
+    fetchMovies();
+  }, []);
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    fetchMovies(searchTerm);
+  };
+
+  const clearSearch = () => {
+    setSearchTerm("");
+    fetchMovies();
+  };
+
+  // Función para navegar a la página de detalles de la película con su ID
+  const handleMovieClick = (movieId) => {
+    navigate(`/movies/${movieId}`);
+  };
+
+  return (
+    <div>
+      <form onSubmit={handleSearch} className="flex justify-center pt-6 gap-2">
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Buscar películas..."
+          className="p-2 border rounded bg-gray-500 text-white"
+        />
+        <button
+          type="submit"
+          className="p-2 border rounded bg-blue-500 text-white w-10"
+        >
+          <FontAwesomeIcon icon={faSearch} />
+        </button>
+        {searchTerm && (
+          <button
+            onClick={clearSearch}
+            className="p-2 border rounded bg-red-500 text-white w-10"
+          >
+            <FontAwesomeIcon icon={faTimes} />
+          </button>
+        )}
+      </form>
+      <div className="grid grid-cols-4 gap-4 mt-4 bg-[#5C8374] p-4 rounded">
+        {movies
+          .filter((movie) => movie.poster_path)
+          .map((movie) => (
+            <div
+              key={movie.id}
+              className="flex flex-col bg-[#8ac7af] rounded overflow-hidden shadow-lg transition duration-300 cursor-pointer"
+              style={{ minHeight: '540px' }}
+              onClick={() => handleMovieClick(movie.id)}
+            >
+              <img
+                className="w-full h-96 object-cover" 
+                src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
+                alt={movie.title}
+              />
+              <div className="p-4 flex flex-col justify-normal flex-grow">
+                <div className="font-bold text-xl mb-2 text-white">
+                  {movie.title}
+                </div>
+                <p className="text-gray-700 text-base overflow-hidden text-ellipsis">
+                  {movie.overview.length > 100 ? movie.overview.substring(0, 100) + '...' : movie.overview}
+                </p>
+              </div>
+            </div>
+          ))}
+      </div>
+    </div>
+  );
+};
+
+export default MoviesGrid;
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import Slider from "react-slick";
+import { useNavigate } from 'react-router-dom';
+import "slick-carousel/slick/slick.css";
+import "slick-carousel/slick/slick-theme.css";
+
+const MovieCarousel = () => {
+  const [movies, setMovies] = useState([]);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchMovies = async () => {
+      try {
+        const response = await axios.get("/movies");
+        setMovies(response.data.slice(0, 30));
+      } catch (error) {
+        console.error("Error fetching movies:", error);
+      }
+    };
+
+    fetchMovies();
+  }, []);
+
+  // Funciones para manejar los clics en los botones
+  const handleReviewClick = (movieId) => {
+    navigate(`/reviews/${movieId}`);
+    console.log("Review for movie", movieId);
+  };
+
+  const handleDiscussionClick = (movieId) => {
+    navigate(`/discussions/${movieId}`);
+    console.log("Discussion for movie", movieId);
+  };
+
+  const settings = {
+    dots: true,
+    infinite: true,
+    speed: 500,
+    slidesToShow: 3,
+    slidesToScroll: 1,
+    // centerMode: true, para que parezca que hay mas peliculas
+    autoplay: true,
+    autoplaySpeed: 3000,
+    responsive: [
+      {
+        breakpoint: 768,
+        settings: {
+          arrows: false,
+          centerMode: true,
+          centerPadding: "40px",
+          slidesToShow: 1,
+        },
+      },
+    ],
+  };
+
+  // Función para navegar a la página de detalles de la película con su ID
+  const handleMovieClick = (movieId) => {
+    navigate(`/movies/${movieId}`);
+  };
+
+  return (
+    <div className="mx-auto pt-2 max-w-[1024px]">
+      <Slider {...settings}>
+        {movies.map(
+          (movie) =>
+            movie.poster_path && (
+              
+              <div key={movie.id} className="px-2 group">
+                <div className="bg-white rounded-lg overflow-hidden shadow-lg relative">
+                  <div className="overflow-hidden group-hover:mb-16 cursor-pointer">
+                    <img
+                      src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
+                      alt={movie.title}
+                      className="mx-auto transition-all duration-300 transform group-hover:scale-90"
+                      onClick={() => handleMovieClick(movie.id)}
+                    />
+                  </div>
+                  <div className="hidden group-hover:flex flex-col items-center justify-center absolute inset-x-0 bottom-0 mb-4 transition-all duration-300">
+                    <button
+                      className="mb-2 bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-700 transition-all duration-300"
+                      onClick={() => handleReviewClick(movie.id)}
+                    >
+                      Crear reseña
+                    </button>
+                    <button
+                      className="bg-green-500 text-white py-2 px-4 rounded hover:bg-green-700 transition-all duration-300"
+                      onClick={() => handleDiscussionClick(movie.id)}
+                    >
+                      Ir a Debate
+                    </button>
+                  </div>
+                  <div className="text-center p-4 bg-opacity-0 group-hover:bg-opacity-100 transition-all duration-300">
+                    <h3 className="text-gray-900 text-xl group-hover:hidden transition-all duration-300">{movie.title}</h3>
+                  </div>
+                </div>
+              </div>
+            )
+        )}
+      </Slider>
+    </div>
+  );
+};
+
+export default MovieCarousel;
+import React, { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
+import axios from "axios";
+import ReviewForm from "./ReviewForm";
+
+const ReviewPage = () => {
+  const { movieId } = useParams();
+  const [movie, setMovie] = useState(null);
+
+  useEffect(() => {
+    const fetchMovie = async () => {
+      try {
+        const response = await axios.get(
+          `http://localhost:3001/movies/${movieId}`
+        );
+        setMovie(response.data);
+      } catch (error) {
+        console.error("Error al obtener la película:", error);
+      }
+    };
+
+    fetchMovie();
+  }, [movieId]);
+
+  if (!movie) {
+    return <div>No se ha encontrado la película</div>;
+  }
+
+  return (
+    <div>
+      <div className="text-white min-h-screen flex flex-col items-center pt-8">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col md:flex-row items-center md:items-start md:space-x-6">
+            <img
+              className="w-full md:w-1/3 lg:w-1/4 shadow-lg rounded-lg mb-4 md:mb-0"
+              src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
+              alt={movie.title}
+            />
+            <div className="md:w-2/3">
+              <h1 className="text-4xl font-bold mb-4">{movie.title}</h1>
+              <p className="text-gray-400">{movie.overview}</p>
+              <div className="mt-6">
+                <ReviewForm movieId={movieId} />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default ReviewPage;
+import React from "react";
+import { Link } from "react-router-dom";
+import icon from "../img/icon.png";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faUser, faSignOutAlt } from "@fortawesome/free-solid-svg-icons";
+
+const Navbar = () => {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
+
+  return (
+    <nav className="bg-[#183D3D] p-4 w-full">
+      <div className="mx-auto flex items-center justify-between">
+        <div className="text-white">
+          <Link
+            to="/"
+            className="text-lg font-semibold hover:text-gray-300 transition duration-300"
+          >
+            <img src={icon} alt="F&S" className="h-8 mr-2" />
+          </Link>
+        </div>
+        <div className="space-x-4">
+          <Link
+            to="/movies"
+            className="text-white hover:text-blue-400 transition duration-300"
+          >
+            Películas
+          </Link>
+          <Link
+            to="/reviews"
+            className="text-white hover:text-blue-400 transition duration-300"
+          >
+            Reseñas
+          </Link>
+          <Link
+            to="/discussions"
+            className="text-white hover:text-blue-400 transition duration-300"
+          >
+            Debates
+          </Link>
+          </div>
+          <div className="space-x-4">
+          <Link
+            to="/profile"
+            className="text-white hover:text-blue-400 transition duration-300"
+          >
+            <FontAwesomeIcon icon={faUser} className="text-lg" />
+          </Link>
+          <Link
+            to="/login"
+            onClick={handleLogout}
+            className="text-white hover:text-blue-400 transition duration-300"
+          >
+            <FontAwesomeIcon icon={faSignOutAlt} className="text-lg" />
+          </Link>
+        </div>
+      </div>
+    </nav>
+  );
+};
+
+export default Navbar;
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import Slider from "react-slick";
+import "slick-carousel/slick/slick.css";
+import "slick-carousel/slick/slick-theme.css";
+
+function ReviewsCarousel() {
+  const [reviews, setReviews] = useState([]);
+  const [movies, setMovies] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Cargamos todas las reseñas
+  useEffect(() => {
+    setLoading(true);
+    axios
+      .get(`http://localhost:3001/reviews`)
+      .then((response) => {
+        setReviews(response.data);
+        const movieIds = [
+          ...new Set(response.data.map((review) => review.api_movie_id)),
+        ];
+        return Promise.all(
+          movieIds.map((id) => axios.get(`http://localhost:3001/movies/${id}`))
+        );
+      })
+      .then((responses) => {
+        const moviesData = responses.reduce((acc, response) => {
+          acc[response.data.id] = response.data;
+          return acc;
+        }, {});
+
+        setMovies(moviesData);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error("Error al cargar datos:", error);
+        setError(error);
+        setLoading(false);
+      });
+  }, []);
+
+  // Configuración para react-slick
+  const settings = {
+    dots: false,
+    infinite: false,
+    speed: 500,
+    slidesToShow: 5,
+    slidesToScroll: 1,
+    responsive: [
+      {
+        breakpoint: 1024,
+        settings: {
+          slidesToShow: 3,
+          slidesToScroll: 1,
+          infinite: true,
+          dots: true,
+        },
+      },
+      {
+        breakpoint: 600,
+        settings: {
+          slidesToShow: 1,
+          slidesToScroll: 1,
+        },
+      },
+    ],
+  };
+
+  if (loading) return <p>Cargando reseñas...</p>;
+  if (error) return <p>Error al cargar las reseñas: {error.message}</p>;
+
+  return (
+    <div className="mx-auto px-4 py-8">
+      {reviews.length > 0 ? (
+        <Slider {...settings}>
+          {reviews.map((review) => (
+            <div key={review.id} className="px-2">
+              {movies && movies[review.api_movie_id] && (
+                <div className="bg-white rounded-lg overflow-hidden shadow-lg">
+                  <img
+                    src={`https://image.tmdb.org/t/p/w500${
+                      movies[review.api_movie_id].poster_path
+                    }`}
+                    alt={movies[review.api_movie_id].title}
+                    className="w-full object-cover"
+                  />
+                  <div className="p-4">
+                    <h2 className="text-xl font-bold text-gray-900 mb-2">
+                      {movies[review.api_movie_id].title}
+                    </h2>
+                    <p className="text-gray-700 text-sm">
+                      {review.text}
+                      {/* TODO: Obtener el nombre del usuario mediante el user_id */}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </Slider>
+      ) : (
+        <div className="text-center">
+          <p>No hay reseñas. ¡Sé el primero en escribir una!</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default ReviewsCarousel;
+import React, { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faHeart,
+  faEye,
+  faPen,
+  faComments,
+} from "@fortawesome/free-solid-svg-icons";
+
+const MovieDetails = () => {
+  const { movieId } = useParams();
+  const [movieData, setMovieData] = useState(null);
+  // Estados para manejar si está en favoritos o para ver
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [isWatchList, setIsWatchList] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchMovieData = async () => {
+      try {
+        const response = await axios.get(`/movies/${movieId}`);
+        setMovieData(response.data);
+      } catch (error) {
+        console.error("Error fetching movie details:", error);
+      }
+    };
+
+    fetchMovieData();
+  }, [movieId]);
+
+  // Funciones para manejar los botones
+  const handleAddToFavorites = () => {
+    // Lógica para añadir a favoritos
+    setIsFavorite(!isFavorite);
+  };
+
+  const handleAddToWatchList = () => {
+    // Lógica para añadir a lista para ver
+    setIsWatchList(!isWatchList);
+  };
+
+  // Funciones para manejar los clics en los botones
+  const handleReviewClick = (movieId) => {
+    navigate(`/reviews/${movieId}`);
+  };
+
+  const handleDiscussionClick = (movieId) => {
+    navigate(`/discussions/${movieId}`);
+    console.log("Discussion for movie", movieId);
+  };
+
+  const renderStars = (voteAverage) => {
+    const starCount = Math.round(voteAverage / 2);
+    return [...Array(starCount)].map((_, i) => <span key={i}>⭐</span>);
+  };
+
+  if (!movieData) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="text-xl font-semibold">Cargando...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container mx-auto my-8 p-4 bg-[#8ac7af] rounded-lg shadow-lg flex flex-wrap md:flex-nowrap">
+      <div className="flex flex-col w-full md:w-1/2 lg:w-1/3">
+        <img
+          src={`https://image.tmdb.org/t/p/original${movieData.poster_path}`}
+          alt={movieData.title}
+          className="w-full h-auto rounded-lg shadow-md mb-4"
+        />
+      </div>
+      <div className="w-full md:w-1/2 lg:w-2/3 md:pl-4">
+        <h1 className="text-4xl font-bold text-gray-800 mb-3">
+          {movieData.title}
+        </h1>
+        <p className="text-lg">
+          <strong>Fecha de lanzamiento:</strong> {movieData.release_date}
+        </p>
+        <p className="text-lg">
+          <strong>Resumen:</strong> {movieData.overview}
+        </p>
+        <p className="text-lg flex items-center">
+          <strong>Promedio de votos:</strong>
+          <span className="ml-2">{renderStars(movieData.vote_average)}</span>
+        </p>
+        <p className="text-lg">
+          <strong>Popularidad:</strong> {movieData.popularity}
+        </p>
+        <div className="flex gap-2 mt-4">
+          <button
+            onClick={handleAddToFavorites}
+            className={`px-4 py-2 rounded-lg font-semibold text-sm ${
+              isFavorite
+                ? "bg-green-700 text-white"
+                : "bg-green-200 text-green-900"
+            } hover:bg-green-600 focus:outline-none focus:ring focus:ring-green-500 transition ease-in duration-200`}
+          >
+            <FontAwesomeIcon
+              icon={faHeart}
+              className={`${isFavorite ? "text-white" : "text-green-900"} mr-2`}
+            />
+            {isFavorite ? "En Favoritos" : "Añadir a Favoritos"}
+          </button>
+          <button
+            onClick={handleAddToWatchList}
+            className={`px-4 py-2 rounded-lg font-semibold text-sm ${
+              isWatchList
+                ? "bg-green-700 text-white"
+                : "bg-green-200 text-green-900"
+            } hover:bg-green-600 focus:outline-none focus:ring focus:ring-green-500 transition ease-in duration-200`}
+          >
+            <FontAwesomeIcon
+              icon={faEye}
+              className={`${
+                isWatchList ? "text-white" : "text-green-900"
+              } mr-2`}
+            />
+            {isWatchList ? "En Lista para Ver" : "Añadir a Lista para Ver"}
+          </button>
+          <button
+            onClick={() => handleReviewClick(movieData.id)}
+            className="px-4 py-2 rounded-lg bg-green-500 text-white font-semibold text-sm hover:bg-green-700 focus:outline-none focus:ring focus:ring-green-500 transition ease-in duration-200"
+          >
+            <FontAwesomeIcon icon={faPen} className="text-white mr-2" />
+            Crear Reseña
+          </button>
+          <button
+            onClick={handleDiscussionClick}
+            className="px-4 py-2 rounded-lg bg-green-500 text-white font-semibold text-sm hover:bg-green-700 focus:outline-none focus:ring focus:ring-green-500 transition ease-in duration-200"
+          >
+            <FontAwesomeIcon icon={faComments} className="text-white mr-2" />
+            Crear Debate
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default MovieDetails;
+import React, { useState } from "react";
+import axios from "axios";
+import logo from "../img/logo.png"
+import { useNavigate } from "react-router-dom"; 
+
+function Register() {
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    showPassword: false,
+  });
+
+  const navigate = useNavigate();
+
+  // Manejador de cambio en los campos del formulario
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+  };
+
+  // Toggle para mostrar/ocultar contraseña
+  const toggleShowPassword = () => {
+    setFormData({ ...formData, showPassword: !formData.showPassword });
+  };
+
+  // Función para enviar los datos al backend
+  const registerUser = async (userData) => {
+    try {
+      const response = await axios.post(
+        "http://localhost:3001/register",
+        userData
+      );
+      console.log(response.data);
+      alert("Registro exitoso");
+      navigate('/login');
+    } catch (error) {
+      console.error(
+        "Error en el registro:",
+        error.response ? error.response.data : error
+      );
+      alert("Error en el registro");
+    }
+  };
+
+  // Manejador de envío del formulario
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (formData.password !== formData.confirmPassword) {
+      alert("Las contraseñas no coinciden.");
+      return;
+    }
+    await registerUser({
+      name: formData.name,
+      email: formData.email,
+      password: formData.password,
+    });
+  };
+
+  console.log("Formulario enviado", formData);
+
+  return (
+    <div className="flex flex-col justify-center items-center h-screen bg-gray-700">
+      <img src={logo} alt="Logo" className="h-24 mb-6" />
+      <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-xl px-10 pt-8 pb-10 mb-4 w-96">
+      <h2 className="text-gray-800 text-2xl font-semibold mb-6">
+        Registro
+      </h2>
+        <div className="mb-5">
+          <input
+            type="text"
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
+            placeholder="Nombre"
+            required
+            className="shadow-sm appearance-none border rounded-md w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        <div className="mb-5">
+          <input
+            type="email"
+            name="email"
+            value={formData.email}
+            onChange={handleChange}
+            placeholder="Correo Electrónico"
+            required
+            className="shadow-sm appearance-none border rounded-md w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        <div className="mb-5">
+          <input
+            type={formData.showPassword ? "text" : "password"}
+            name="password"
+            value={formData.password}
+            onChange={handleChange}
+            placeholder="Contraseña"
+            required
+            className="shadow-sm appearance-none border rounded-md w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        <div className="mb-5">
+          <input
+            type={formData.showPassword ? "text" : "password"}
+            name="confirmPassword"
+            value={formData.confirmPassword}
+            onChange={handleChange}
+            placeholder="Confirmar Contraseña"
+            required
+            className="shadow-sm appearance-none border rounded-md w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        <div className="mb-5">
+          <label className="flex items-center">
+            <input
+              type="checkbox"
+              checked={formData.showPassword}
+              onChange={toggleShowPassword}
+              className="mr-2"
+            />
+            <span className="text-sm text-gray-700">Mostrar contraseña</span>
+          </label>
+        </div>
+        <button
+          type="submit"
+          className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 w-full"
+        >
+          Registrar
+        </button>
+        <div className="flex justify-start mt-6 text-sm">
+            <p className="text-gray-700 pr-2">Ya estas registrado? </p>
+            <a href="/register" className="text-blue-600 hover:underline"> Iniciar Sesion</a>
+          </div>
+      </form>
+    </div>
+  );
+  
+}
+
+export default Register;
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+
+function ReviewsPage() {
+  const [reviews, setReviews] = useState([]);
+  const [movies, setMovies] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    setLoading(true);
+    axios
+      .get(`http://localhost:3001/reviews`)
+      .then((response) => {
+        setReviews(response.data);
+        const movieIds = [
+          ...new Set(response.data.map((review) => review.api_movie_id)),
+        ];
+        return Promise.all(
+          movieIds.map((id) => axios.get(`http://localhost:3001/movies/${id}`))
+        );
+      })
+      .then((responses) => {
+        const moviesData = responses.reduce((acc, response) => {
+          acc[response.data.id] = response.data;
+          return acc;
+        }, {});
+
+        setMovies(moviesData);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error("Error al cargar datos:", error);
+        setError(error);
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) return <p>Cargando reseñas...</p>;
+  if (error) return <p>Error al cargar las reseñas: {error.message}</p>;
+
+  return (
+    <div className="mx-auto px-4 py-8">
+      {reviews.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+          {reviews.map((review) => (
+            <div
+              key={review.id}
+              className="bg-white rounded-lg overflow-hidden shadow-lg hover:shadow-2xl transition duration-300 ease-in-out"
+            >
+              {movies && movies[review.api_movie_id] && (
+                <div>
+                  <img
+                    src={`https://image.tmdb.org/t/p/w500${
+                      movies[review.api_movie_id].poster_path
+                    }`}
+                    alt={movies[review.api_movie_id].title}
+                    className="w-full h-64 object-cover"
+                  />
+                  <div className="p-4">
+                    <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                      {movies[review.api_movie_id].title}
+                    </h2>
+                    <p className="text-gray-700 text-base">
+                      {review.text}
+                      {/* TODO: Obtener el nombre del usuario mediante el user_id */}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="text-center">
+          <p>No hay reseñas. ¡Sé el primero en escribir una!</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default ReviewsPage;
+import React from "react";
+import ReviewCarrusel from "./ReviewCarrusel";
+import Discussions from "./Discussions";
+import MovieCarrusel from "./MovieCarrusel";
+
+function Home() {
+  return (
+    <div className="mx-auto bg-[#5C8374] text-gray-200 min-h-screen">
+      <div className="px-4 mx-auto text-gray-200 min-h-screen">
+        <h1 className="text-2xl font-bold pt-10">Qué ver hoy?</h1>
+        <div className="carousel h-auto mb-4">
+          <MovieCarrusel />
+        </div>
+        <div className="my-4">
+          <h1 className="text-2xl font-bold mt-8">
+            Reseñas más vistas hoy
+          </h1>
+          <section className="reviews">
+            <ReviewCarrusel />
+          </section>
+        </div>
+        <div className="my-4">
+          <h1 className="text-2xl font-bold">
+            Debates más vistos o los últimos
+          </h1>
+          <section className="discussions">
+            <Discussions />
+          </section>
+        </div>
+        {/* Aquí iría el resto de tu componente Home, como el footer */}
+      </div>
+    </div>
+  );
+}
+
+export default Home;
+import React, { useEffect } from "react";
+import "./index.css";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { publicRoutes, protectedRoutes } from "./routes";
+import Layout from "./components/Layout";
+
+function ProtectedRoutes() {
+  const { isAuthenticated, checkAuth } = useAuth();
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  return isAuthenticated ? (
+    <Layout>
+      <Routes>
+        {protectedRoutes.map((route, index) => (
+          <Route key={index} path={route.path} element={<route.component />} />
+        ))}
+      </Routes>
+    </Layout>
+  ) : (
+    <Navigate to="/login" />
+  );
+}
+
+function PublicRoutes() {
+  return (
+    <Routes>
+      {publicRoutes.map((route, index) => (
+        <Route key={index} path={route.path} element={<route.component />} />
+      ))}
+    </Routes>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <Router>
+        <PublicRoutes />
+        <ProtectedRoutes />
+      </Router>
+    </AuthProvider>
+  );
+}
+
+export default App;

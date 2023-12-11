@@ -10,7 +10,7 @@ export function AuthProvider({ children }) {
   // Iniciar sesión
   const login = async (email, password) => {
     try {
-      const response = await axios.post("http://localhost:3001/login", {
+      const response = await axios.post("/login", {
         email,
         password,
       });
@@ -75,17 +75,28 @@ export function AuthProvider({ children }) {
           }
         } catch (error) {
           console.error("Error al decodificar el token", error);
-          localStorage.removeItem("auth"); // Eliminar un token potencialmente corrupto
+          localStorage.removeItem("auth");
           setAuth(null);
         }
       }
     }
   };
 
+  const getUserId = () => {
+    if (auth && auth.token) {
+      try {
+        const decodedToken = jwtDecode(auth.token);
+        return decodedToken.id; 
+      } catch (error) {
+        console.error("Error al decodificar el token", error);
+      }
+    }
+    return null;
+  };
 
   return (
     <AuthContext.Provider
-      value={{ auth, isAuthenticated, login, logout, checkAuth }}
+      value={{ auth, isAuthenticated, login, logout, checkAuth, getUserId }}
     >
       {children}
     </AuthContext.Provider>
