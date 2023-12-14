@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import Slider from "react-slick";
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from "react-router-dom";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 
@@ -25,12 +25,15 @@ const MovieCarousel = () => {
   // Funciones para manejar los clics en los botones
   const handleReviewClick = (movieId) => {
     navigate(`/reviews/${movieId}`);
-    console.log("Review for movie", movieId);
   };
 
   const handleDiscussionClick = (movieId) => {
     navigate(`/discussions/${movieId}`);
-    console.log("Discussion for movie", movieId);
+  };
+
+  // Función para navegar a la página de detalles de la película con su ID
+  const handleMovieClick = (movieId) => {
+    navigate(`/movies/${movieId}`);
   };
 
   const settings = {
@@ -55,18 +58,12 @@ const MovieCarousel = () => {
     ],
   };
 
-  // Función para navegar a la página de detalles de la película con su ID
-  const handleMovieClick = (movieId) => {
-    navigate(`/movies/${movieId}`);
-  };
-
   return (
     <div className="mx-auto pt-2 max-w-[1024px]">
       <Slider {...settings}>
         {movies.map(
           (movie) =>
             movie.poster_path && (
-              
               <div key={movie.id} className="px-2 group">
                 <div className="bg-white rounded-lg overflow-hidden shadow-lg relative">
                   <div className="overflow-hidden group-hover:mb-16 cursor-pointer">
@@ -92,7 +89,9 @@ const MovieCarousel = () => {
                     </button>
                   </div>
                   <div className="text-center p-4 bg-opacity-0 group-hover:bg-opacity-100 transition-all duration-300">
-                    <h3 className="text-gray-900 text-xl group-hover:hidden transition-all duration-300">{movie.title}</h3>
+                    <h3 className="text-gray-900 text-xl group-hover:hidden transition-all duration-300">
+                      {movie.title}
+                    </h3>
                   </div>
                 </div>
               </div>

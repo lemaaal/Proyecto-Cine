@@ -49,7 +49,6 @@ const MovieDetails = () => {
 
   const handleDiscussionClick = (movieId) => {
     navigate(`/discussions/${movieId}`);
-    console.log("Discussion for movie", movieId);
   };
 
   const renderStars = (voteAverage) => {
@@ -130,7 +129,7 @@ const MovieDetails = () => {
             Crear Reseña
           </button>
           <button
-            onClick={handleDiscussionClick}
+            onClick={() => handleDiscussionClick(movieData.id)}
             className="px-4 py-2 rounded-lg bg-green-500 text-white font-semibold text-sm hover:bg-green-700 focus:outline-none focus:ring focus:ring-green-500 transition ease-in duration-200"
           >
             <FontAwesomeIcon icon={faComments} className="text-white mr-2" />

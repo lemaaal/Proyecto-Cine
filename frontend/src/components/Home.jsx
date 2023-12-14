@@ -1,6 +1,6 @@
 import React from "react";
 import ReviewCarrusel from "./ReviewCarrusel";
-import Discussions from "./Discussions";
+import Discussions from "./DiscussionCarrusel";
 import MovieCarrusel from "./MovieCarrusel";
 
 function Home() {

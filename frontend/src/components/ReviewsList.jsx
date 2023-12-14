@@ -18,9 +18,7 @@ function ReviewsPage() {
         const movieIds = [
           ...new Set(response.data.map((review) => review.api_movie_id)),
         ];
-        return Promise.all(
-          movieIds.map((id) => axios.get(`/movies/${id}`))
-        );
+        return Promise.all(movieIds.map((id) => axios.get(`/movies/${id}`)));
       })
       .then((responses) => {
         const moviesData = responses.reduce((acc, response) => {
@@ -41,15 +39,14 @@ function ReviewsPage() {
   if (loading) return <p>Cargando reseñas...</p>;
   if (error) return <p>Error al cargar las reseñas: {error.message}</p>;
 
-  
   // Función para navegar a la página de detalles de la review con su ID
   const handleReviewClick = (movieId, reviewId) => {
     navigate(`/reviews/${movieId}/${reviewId}`);
   };
 
-
   return (
     <div className="mx-auto px-4 py-8">
+      <h2 className="text-3xl font-bold text-white mb-6">Últimas reseñas</h2>
       {reviews.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
           {reviews.map((review) => (
@@ -65,7 +62,9 @@ function ReviewsPage() {
                     }`}
                     alt={movies[review.api_movie_id].title}
                     className="w-full h-64 object-cover"
-                    onClick={() => handleReviewClick(review.api_movie_id, review.id)} 
+                    onClick={() =>
+                      handleReviewClick(review.api_movie_id, review.id)
+                    }
                   />
                   <div className="p-4">
                     <h2 className="text-2xl font-bold text-gray-900 mb-2">

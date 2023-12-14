@@ -32,7 +32,6 @@ function Register() {
         "/register",
         userData
       );
-      console.log(response.data);
       alert("Registro exitoso");
       navigate('/login');
     } catch (error) {
@@ -57,8 +56,6 @@ function Register() {
       password: formData.password,
     });
   };
-
-  console.log("Formulario enviado", formData);
 
   return (
     <div className="flex flex-col justify-center items-center h-screen bg-gray-700">
@@ -130,7 +127,7 @@ function Register() {
         </button>
         <div className="flex justify-start mt-6 text-sm">
             <p className="text-gray-700 pr-2">Ya estas registrado? </p>
-            <a href="/register" className="text-blue-600 hover:underline"> Iniciar Sesion</a>
+            <a href="/login" className="text-blue-600 hover:underline"> Iniciar Sesion</a>
           </div>
       </form>
     </div>

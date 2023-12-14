@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 
 const ReviewForm = ({ movieId }) => {
   const [reviewText, setReviewText] = useState("");
-  const { getUserId } = useAuth();
+  const { getUserId, logout } = useAuth();
   const userId = getUserId();
   const navigate = useNavigate();
 
@@ -17,9 +17,12 @@ const ReviewForm = ({ movieId }) => {
         user_id: userId, 
         text: reviewText, 
       });
-      // TODO: Aquí podrías redirigir al usuario o mostrar un mensaje de éxito
       navigate('/reviews')
     } catch (error) {
+      if (error.response && error.response.status === 401) {
+        logout();
+        navigate("/login");
+      }
       console.error("Error al enviar la reseña:", error);
       // Aquí podrías manejar el error, tal vez mostrar un mensaje al usuario
     }

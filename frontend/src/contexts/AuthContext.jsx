@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, useCallback} from "react";
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 
@@ -57,16 +57,16 @@ export function AuthProvider({ children }) {
   };
 
   // Revisar si hay una sesión guardada
-  const checkAuth = () => {
+  const checkAuth = useCallback(() => {
     const storedAuth = localStorage.getItem("auth");
     if (storedAuth) {
       const parsedAuth = JSON.parse(storedAuth);
       if (parsedAuth && parsedAuth.token) {
         try {
           const decoded = jwtDecode(parsedAuth.token);
-          const isTokenExpired =
-            decoded.exp && Date.now() >= decoded.exp * 1000;
+          const isTokenExpired = decoded.exp && Date.now() >= decoded.exp * 1000;
           if (!isTokenExpired) {
+            logout();
             setAuth(parsedAuth);
           } else {
             // Si el token ha expirado, eliminarlo de localStorage y actualizar el estado
@@ -75,12 +75,13 @@ export function AuthProvider({ children }) {
           }
         } catch (error) {
           console.error("Error al decodificar el token", error);
+          logout();
           localStorage.removeItem("auth");
           setAuth(null);
         }
       }
     }
-  };
+  }, [setAuth]);
 
   const getUserId = () => {
     if (auth && auth.token) {

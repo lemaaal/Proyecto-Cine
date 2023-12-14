@@ -7,15 +7,15 @@ import MoviePage from "./components/MoviePage";
 import Reviews from "./components/ReviewsList";
 import ReviewPost from "./components/ReviewsPost";
 import ReviewPage from "./components/ReviewPage"
-import Discussions from "./components/Discussions";
-import Discussions from "./components/DiscussionsPost";
-import Discussions from "./components/DiscussionsPage";
+import DiscussionsList from "./components/DiscussionsList";
+import DiscussionsPost from "./components/DiscussionsPost";
+import DiscussionPage from "./components/DiscussionPage";
 import Profile from "./components/Profile";
 import NotFound from "./components/NotFound";
 
 const publicRoutes = [
-    { path: '/login', component: Login },
-    { path: '/register', component: Register },
+    { path: '/login', component: Login, showNavbar: false },
+    { path: '/register', component: Register, showNavbar: false },
     // TODO: Recuperar contraseña
   ];
   
@@ -26,12 +26,11 @@ const publicRoutes = [
     { path: '/reviews', component: Reviews },
     { path: '/reviews/:movieId', component: ReviewPost },
     { path: '/reviews/:movieId/:reviewId', component: ReviewPage },
-    { path: '/discussions', component: Discussions },
-    { path: '/discussions/:movieId', component: ReviewPost },
-    { path: '/discussions/:movieId/:discussionId', component: ReviewPage },
+    { path: '/discussions', component: DiscussionsList },
+    { path: '/discussions/:movieId', component: DiscussionsPost },
+    { path: '/discussions/:movieId/:discussionId', component: DiscussionPage },
     { path: '/profile', component: Profile },
     { path: '*', component: NotFound }
-    // Más rutas protegidas...
   ];
 
 export { protectedRoutes, publicRoutes }

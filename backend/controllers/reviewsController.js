@@ -71,7 +71,9 @@ const getReviewInfo = (req, res) => {
 const postReview = (req, res) => {
   const { movie_id, user_id, text } = req.body;
   const timestamp = new Date().toISOString().slice(0, 19).replace("T", " ");
-
+  if (!user_id) {
+    return res.status(401).json({ message: "Usuario no autenticado" });
+  }
   const query =
     "INSERT INTO movie_reviews (api_movie_id, user_id, text, timestamp) VALUES (?, UUID_TO_BIN(?), ?, ?)";
   db.query(query, [movie_id, user_id, text, timestamp], (error, results) => {
