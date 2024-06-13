@@ -5,7 +5,7 @@ const dbConfig = {
   user: "admin",
   host: "cine.c10uqqqs0klw.eu-west-3.rds.amazonaws.com",
   port: 3306,
-  password: "Abc123..",
+  password: "TKxhTXspvXdYDeH7TP46",
   database: "CineAWS",
 };
 
