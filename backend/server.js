@@ -17,7 +17,7 @@ app.use(express.json());
 
 app.use(
   cors({
-    origin: ["http://localhost:3000", "https://13.39.41.175"] //Añadimos nuestra ip publica del Bastion Host
+    origin: ["http://localhost:3000", "https://13.39.41.175:3000", "http://13.39.41.175:3000"] //Añadimos nuestra ip publica del Bastion Host
   })
 );
 
