@@ -17,7 +17,7 @@ app.use(express.json());
 
 app.use(
   cors({
-    origin: ["http://localhost:3000", "https://e2f4-2a02-9130-90a5-8d3e-80a6-61d1-ca9c-e716.ngrok-free.app"]
+    origin: ["http://localhost:3000", "https://13.39.41.175"] //Añadimos nuestra ip publica del Bastion Host
   })
 );
 
