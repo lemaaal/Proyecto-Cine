@@ -29,6 +29,6 @@ app.use("/discussions", discussionRoutes);
 // app.use("/profile", profileRoutes);
 // app.use();
 
-app.listen(port, () => {
+app.listen(port, '0.0.0.0', () => {
   console.log(`Servidor ejecutándose en el puerto ${port}`);
 });
